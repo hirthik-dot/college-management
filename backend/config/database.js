@@ -3,17 +3,16 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
-const connectDB = async () => {
+const connectDB = async (mongoUri, dbName = "college_portal") => {
   try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      dbName: "college_portal", // ✅ explicitly use your DB
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    await mongoose.connect(mongoUri, {
+      dbName,  // ✅ use DB passed from server.js
     });
-    console.log("🚀 MongoDB connected to college_portal");
+
+    console.log(`🚀 MongoDB connected to ${dbName}`);
   } catch (err) {
     console.error("❌ MongoDB connection error:", err.message);
-    process.exit(1);
+    throw err; // ❗ let server.js handle the failure
   }
 };
 

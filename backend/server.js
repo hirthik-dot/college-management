@@ -16,7 +16,6 @@ import marksheetRoutes from "./routes/marksheetRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import facultyRoutes from "./routes/facultyRoutes.js";
 
-
 const app = express();
 
 // Middleware
@@ -27,22 +26,32 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 // Ensure uploads folder exists
 fs.ensureDirSync(path.join(process.cwd(), "uploads/marksheets"));
 
-// Connect to MongoDB
-connectDB(process.env.MONGO_URI, "college_portal") // correct DB name
-  .then(() => console.log("✅ Connected to MongoDB: college_portal"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+// -------------------
+// Start server ONLY after DB connects
+// -------------------
+const startServer = async () => {
+  try {
+    await connectDB(process.env.MONGO_URI, "college_portal");
+    console.log("✅ Connected to MongoDB: college_portal");
 
-// Routes
-app.use("/api", authRoutes);        // /api/register  /api/login
-app.use("/api", studentRoutes);     // /api/profile  /api/arrears
-app.use("/api/admin", adminRoutes); // /api/admin/login  /api/admin/stats
-app.use("/api", marksheetRoutes);   // /api/upload-marksheet  /api/marksheets
-app.use("/api/ai", aiRoutes); // /api/ai/chat
-app.use("/api", facultyRoutes);  // /api/faculty/login
-      
+    // Routes
+    app.use("/api", authRoutes);        // /api/register  /api/login
+    app.use("/api", studentRoutes);     // /api/profile  /api/arrears
+    app.use("/api/admin", adminRoutes); // /api/admin/login  /api/admin/stats
+    app.use("/api", marksheetRoutes);   // /api/upload-marksheet  /api/marksheets
+    app.use("/api/ai", aiRoutes);       // /api/ai/chat
+    app.use("/api", facultyRoutes);     // /api/faculty/login
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 API server running on http://localhost:${PORT}`);
-});
+    // Start server
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 API server running on http://localhost:${PORT}`);
+    });
+
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1); // Stop render deploy if DB fails
+  }
+};
+
+startServer();
