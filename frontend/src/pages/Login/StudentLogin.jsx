@@ -13,14 +13,11 @@ export default function StudentLogin() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    // Use environment variable for API URL
-    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-    fetch(`${apiUrl}/api/login`, {
+    
+    fetch('http://localhost:5000/api/login', {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password })
     })
       .then(res => res.json())
       .then(data => {
@@ -29,7 +26,7 @@ export default function StudentLogin() {
           localStorage.setItem("token", data.token);
           navigate("/student/profile");
         } else {
-          setError(data.error || "Login failed");
+          setError(data.error);
         }
       })
       .catch(() => {
@@ -45,9 +42,10 @@ export default function StudentLogin() {
       alignItems: "center",
       justifyContent: "center",
       fontFamily: "inherit",
-      background: `linear-gradient(rgba(212,200,200,0.56), rgba(200,215,250,0.37)), url('/background.png') center/cover no-repeat`,
+            background: `linear-gradient(rgba(212, 200, 200, 0.56), rgba(200, 215, 250, 0.37)), url('/background.png') center/cover no-repeat`,
+
     }}>
-      {/* Background Decorations */}
+      {/* Decorative Background Elements */}
       <div style={{
         position: "absolute",
         top: "10%",
@@ -68,34 +66,33 @@ export default function StudentLogin() {
         borderRadius: "50%",
         filter: "blur(70px)"
       }} />
+<div style={{
+  position: "relative",
+  width: "100%",
+  maxWidth: "420px",
+  maxHeight: "550px",
+background: "rgba(255, 255, 255, 0)",  backdropFilter: "blur(3px)",              // ✅ Frosted glass effect
+  WebkitBackdropFilter: "blur(20px)",        // ✅ Safari support
+  border: "1px solid rgba(140, 135, 135, 0.73)", // ✅ Subtle border
+  borderRadius: "24px",
+  boxShadow: "0 20px 60px rgba(0, 0, 0, 0.39)",
+  overflow: "hidden"
+}}>
 
-      {/* Login Card */}
-      <div style={{
-        position: "relative",
-        width: "100%",
-        maxWidth: "420px",
-        maxHeight: "550px",
-        background: "rgba(255,255,255,0)",
-        backdropFilter: "blur(3px)",
-        WebkitBackdropFilter: "blur(20px)",
-        border: "1px solid rgba(140,135,135,0.73)",
-        borderRadius: "24px",
-        boxShadow: "0 20px 60px rgba(0,0,0,0.39)",
-        overflow: "hidden"
-      }}>
-
-        {/* Header */}
+        {/* Header Section */}
         <div style={{
           background: "linear-gradient(135deg, #667eea2b 0%, #764ba2 100%)",
-          padding: "20px 30px",
+          padding: "20px 30px 20px 30px",
           textAlign: "center",
+          position: "relative"
         }}>
+          {/* Icon/Logo */}
           <div style={{
             width: "80px",
             height: "80px",
             background: "rgba(255,255,255,0.2)",
             borderRadius: "50%",
-            margin: "0 auto 20px",
+            margin: "0 auto 20px auto",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -104,32 +101,42 @@ export default function StudentLogin() {
           }}>
             <span style={{ fontSize: "2.5rem" }}>🎓</span>
           </div>
+          
           <h2 style={{
             color: "#fff",
             margin: 0,
             fontSize: "1.8rem",
             fontWeight: 700,
             marginBottom: "8px"
-          }}>Student Portal</h2>
+          }}>
+            Student Portal
+          </h2>
           <p style={{
             color: "rgba(255,255,255,0.9)",
             margin: 0,
             fontSize: "0.95rem",
             fontWeight: 400
-          }}>Welcome back! Please login to continue</p>
+          }}>
+            Welcome back! Please login to continue
+          </p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ padding: "40px" }}>
-          {/* Email */}
+        {/* Form Section */}
+        <form onSubmit={handleSubmit} style={{
+          padding: "40px"
+        }}>
+          {/* Email Input */}
           <div style={{ marginBottom: "24px" }}>
             <label style={{
               display: "block",
               marginBottom: "9px",
-              color: "#fff",
+              color: "rgba(255, 255, 255, 1)",
               fontSize: "0.8rem",
               fontWeight: 600
-            }}>Email Address</label>
+            }}>
+              
+            Email Address
+            </label>
             <div style={{ position: "relative" }}>
               <span style={{
                 position: "absolute",
@@ -155,21 +162,23 @@ export default function StudentLogin() {
                   outline: "none",
                   boxSizing: "border-box"
                 }}
-                onFocus={e => e.target.style.borderColor = "#667eea"}
-                onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+                onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
               />
             </div>
           </div>
 
-          {/* Password */}
+          {/* Password Input */}
           <div style={{ marginBottom: "24px" }}>
             <label style={{
               display: "block",
               marginBottom: "8px",
-              color: "#fff",
+              color: "#ffffffff",
               fontSize: "0.9rem",
               fontWeight: 600
-            }}>Password</label>
+            }}>
+              Password
+            </label>
             <div style={{ position: "relative" }}>
               <span style={{
                 position: "absolute",
@@ -195,8 +204,8 @@ export default function StudentLogin() {
                   outline: "none",
                   boxSizing: "border-box"
                 }}
-                onFocus={e => e.target.style.borderColor = "#667eea"}
-                onBlur={e => e.target.style.borderColor = "#e5e7eb"}
+                onFocus={(e) => e.target.style.borderColor = "#667eea"}
+                onBlur={(e) => e.target.style.borderColor = "#e5e7eb"}
               />
               <button
                 type="button"
@@ -218,7 +227,7 @@ export default function StudentLogin() {
             </div>
           </div>
 
-          {/* Remember & Forgot */}
+          {/* Remember Me & Forgot Password */}
           <div style={{
             display: "flex",
             justifyContent: "space-between",
@@ -232,17 +241,20 @@ export default function StudentLogin() {
               fontSize: "0.9rem",
               color: "#f4f4f5ff"
             }}>
-              <input type="checkbox" style={{ marginRight: "8px" }} /> Remember me
+              <input type="checkbox" style={{ marginRight: "8px" }} />
+              Remember me
             </label>
             <a href="#" style={{
-              color: "#fff",
+              color: "#ffffffff",
               textDecoration: "none",
               fontSize: "0.9rem",
               fontWeight: 600
-            }}>Forgot Password?</a>
+            }}>
+              Forgot Password?
+            </a>
           </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {error && (
             <div style={{
               background: "#fee2e2",
@@ -255,7 +267,8 @@ export default function StudentLogin() {
               alignItems: "center",
               gap: "8px"
             }}>
-              <span>⚠️</span>{error}
+              <span>⚠️</span>
+              {error}
             </div>
           )}
 
@@ -273,13 +286,15 @@ export default function StudentLogin() {
               fontWeight: 700,
               fontSize: "1.05rem",
               cursor: loading ? "not-allowed" : "pointer",
-              boxShadow: "0 4px 12px rgba(102,126,234,0.4)",
+              boxShadow: "0 4px 12px rgba(102, 126, 234, 0.4)",
               transition: "all 0.3s",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               gap: "8px"
             }}
+            onMouseEnter={(e) => !loading && (e.target.style.transform = "translateY(-2px)")}
+            onMouseLeave={(e) => !loading && (e.target.style.transform = "translateY(0)")}
           >
             {loading ? (
               <>
@@ -294,13 +309,28 @@ export default function StudentLogin() {
                 Logging in...
               </>
             ) : (
-              "Login"
+              <>
+                Login
+              </>
             )}
           </button>
+
+          {/* Divider */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            margin: "28px 0",
+            gap: "12px"
+          }}>
+          </div>
+
+        
+
+    
         </form>
       </div>
 
-      {/* Spin animation */}
+      {/* Add spinning animation */}
       <style>{`
         @keyframes spin {
           0% { transform: rotate(0deg); }

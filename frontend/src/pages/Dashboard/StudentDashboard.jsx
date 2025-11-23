@@ -9,21 +9,18 @@ function getTodayString() {
 export default function StudentDashboard() {
   const [profile, setProfile] = useState({ name: "" });
 
-  const API_BASE = process.env.REACT_APP_API_URL; // ✅ ENV BASE URL
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetch(`${API_BASE}/api/profile`, {    // ✅ Updated URL
+      fetch('http://localhost:5000/api/profile', {
         headers: { "Authorization": `Bearer ${token}` }
       })
         .then(res => res.json())
         .then(data => {
           if (!data.error) setProfile(data);
-        })
-        .catch(err => console.error("Profile fetch error:", err));
+        });
     }
-  }, [API_BASE]);
+  }, []);
 
   return (
     <div style={{
@@ -58,7 +55,7 @@ export default function StudentDashboard() {
             <span>• <b>3 assignments due this week</b></span>
           </div>
         </div>
-
+        {/* Circle checkmark or illustration (optional) */}
         <svg width="80" height="80" style={{position:"absolute",top:16,right:28,opacity:0.13}}>
           <circle cx="40" cy="40" r="38" stroke="#fff" strokeWidth="4" fill="none"/>
           <path d="M27 43l12 12 16-20" stroke="#fff" strokeWidth="4" fill="none" strokeLinecap="round"/>
@@ -108,6 +105,7 @@ export default function StudentDashboard() {
           minWidth: 350
         }}>
           <h3 style={{ fontWeight: 700, fontSize: "1.13rem", marginBottom: 16 }}>Upcoming Assignments</h3>
+          {/* Example assignment card */}
           <div style={{
             background: "#ffeaea",
             borderRadius: 8,
@@ -115,8 +113,7 @@ export default function StudentDashboard() {
             marginBottom: 10,
             borderLeft: "5px solid #f6656f"
           }}>
-            <div style={{ fontWeight: 600 }}>
-              Data Structures Final Project
+            <div style={{ fontWeight: 600 }}>Data Structures Final Project
               <span style={{
                 background: "#ffcad1",
                 color: "#f6656f",
@@ -130,7 +127,6 @@ export default function StudentDashboard() {
             <div style={{ color: "#656" }}>CS 301 • Due Tomorrow</div>
           </div>
         </section>
-
         {/* AI Insights */}
         <section style={{
           flex: 1.5,
