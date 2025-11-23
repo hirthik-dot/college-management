@@ -26,14 +26,24 @@ export default function FloatingChat() {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
+
     const text = input;
     setMessages((prev) => [...prev, { from: "user", text }]);
     setInput("");
+
     try {
-      const res = await axios.post("http://localhost:5000/api/ai/chat", { message: text });
+      const BACKEND_URL = process.env.REACT_APP_Backend_url;
+
+      const res = await axios.post(`${BACKEND_URL}/api/ai/chat`, {
+        message: text,
+      });
+
       setMessages((prev) => [...prev, { from: "bot", text: res.data.reply }]);
     } catch {
-      setMessages((prev) => [...prev, { from: "bot", text: "❌ AI server error" }]);
+      setMessages((prev) => [
+        ...prev,
+        { from: "bot", text: "❌ AI server error" },
+      ]);
     }
   };
 
@@ -41,7 +51,7 @@ export default function FloatingChat() {
     if (e.key === "Enter") sendMessage();
   };
 
-  // Only hide floating chat on AI page
+  // Hide floating chat on main AI page
   if (location.pathname === "/student/ai") return null;
 
   return (
@@ -90,10 +100,10 @@ export default function FloatingChat() {
           transform: isOpen ? "translateY(0)" : "translateY(25px)",
           opacity: isOpen ? 1 : 0,
           transition: "all 0.23s cubic-bezier(.52,.04,.17,1)",
-          pointerEvents: isOpen ? "all" : "none"
+          pointerEvents: isOpen ? "all" : "none",
         }}
       >
-        {/* Top Gradient Header */}
+        {/* Header */}
         <div
           style={{
             padding: "15px",
@@ -107,17 +117,29 @@ export default function FloatingChat() {
             gap: "10px",
           }}
         >
-          <FaRobot size={22} style={{marginRight:"8px",background:"#a78bfa",borderRadius:"50%",padding:"2px"}} />
+          <FaRobot
+            size={22}
+            style={{
+              marginRight: "8px",
+              background: "#a78bfa",
+              borderRadius: "50%",
+              padding: "2px",
+            }}
+          />
           <span>AI Assistant</span>
-          <span style={{
-            marginLeft: "auto",
-            fontSize: "0.98rem",
-            background: "#34d399",
-            color: "#065f46",
-            borderRadius: "10px",
-            padding: "4px 13px",
-            fontWeight: "600"
-          }}>Online</span>
+          <span
+            style={{
+              marginLeft: "auto",
+              fontSize: "0.98rem",
+              background: "#34d399",
+              color: "#065f46",
+              borderRadius: "10px",
+              padding: "4px 13px",
+              fontWeight: "600",
+            }}
+          >
+            Online
+          </span>
         </div>
 
         {/* Messages */}
@@ -131,42 +153,50 @@ export default function FloatingChat() {
           }}
         >
           {messages.length === 0 && (
-            <div style={{
-              color: "#555",
-              background: "#eef2ff",
-              padding: "10px 12px",
-              borderRadius: "13px",
-              fontSize: "0.98rem",
-            }}>
-              👋 Hi there! I’m your academic assistant. Ask me anything about assignments, study help, or planning.
+            <div
+              style={{
+                color: "#555",
+                background: "#eef2ff",
+                padding: "10px 12px",
+                borderRadius: "13px",
+                fontSize: "0.98rem",
+              }}
+            >
+              👋 Hi there! I’m your academic assistant. Ask me anything about
+              assignments, study help, or planning.
             </div>
           )}
+
           {messages.map((msg, i) => (
             <div
               key={i}
               style={{
                 display: "flex",
-                justifyContent: msg.from === "user" ? "flex-end" : "flex-start",
-                margin: "10px 0"
+                justifyContent:
+                  msg.from === "user" ? "flex-end" : "flex-start",
+                margin: "10px 0",
               }}
             >
               <span
                 style={{
                   padding: "11px 14px",
-                  background: msg.from === "user"
-                    ? "linear-gradient(90deg, #6366f1 60%, #4f46e5 100%)"
-                    : "#fff",
+                  background:
+                    msg.from === "user"
+                      ? "linear-gradient(90deg, #6366f1 60%, #4f46e5 100%)"
+                      : "#fff",
                   color: msg.from === "user" ? "white" : "#444",
-                  borderRadius: msg.from === "user"
-                    ? "17px 17px 5px 17px"
-                    : "17px 17px 17px 5px",
+                  borderRadius:
+                    msg.from === "user"
+                      ? "17px 17px 5px 17px"
+                      : "17px 17px 17px 5px",
                   fontSize: "1.05rem",
-                  boxShadow: msg.from === "user"
-                    ? "0 2px 8px #4f46e529"
-                    : "0 2px 7px #e0e7ff91",
+                  boxShadow:
+                    msg.from === "user"
+                      ? "0 2px 8px #4f46e529"
+                      : "0 2px 7px #e0e7ff91",
                   fontWeight: msg.from === "user" ? 600 : 500,
                   maxWidth: "84%",
-                  wordBreak: "break-word"
+                  wordBreak: "break-word",
                 }}
               >
                 {msg.text}
@@ -175,7 +205,7 @@ export default function FloatingChat() {
           ))}
         </div>
 
-        {/* Input Row */}
+        {/* Input */}
         <div
           style={{
             display: "flex",
@@ -183,7 +213,7 @@ export default function FloatingChat() {
             background: "white",
             borderTop: "1px solid #e0e7ff",
             borderRadius: "0 0 18px 18px",
-            boxShadow: "0 -1.5px 7px #6366f10a"
+            boxShadow: "0 -1.5px 7px #6366f10a",
           }}
         >
           <input
@@ -198,7 +228,7 @@ export default function FloatingChat() {
               border: "1.3px solid #e0e7ff",
               fontSize: "1rem",
               background: "#f7f9ff",
-              outline: "none"
+              outline: "none",
             }}
           />
           <button
@@ -213,7 +243,7 @@ export default function FloatingChat() {
               fontWeight: 700,
               fontSize: "1.04rem",
               cursor: "pointer",
-              boxShadow: "0 2px 14px #6366f13a"
+              boxShadow: "0 2px 14px #6366f13a",
             }}
           >
             <FiSend size={22} />

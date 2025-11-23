@@ -34,23 +34,23 @@ export default function Navbar() {
     { label: "Assessments", to: "/student/assessments" },
     { label: "AI Assistant", to: "/student/ai" },
     { label: "Analytics", to: "/student/analytics" },
-    { label: "Arrears", to: "/student/arrears" }  // Always visible
+    { label: "Arrears", to: "/student/arrears" }
   ];
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (token) {
-      fetch('http://localhost:5000/api/profile', {
-        headers: { "Authorization": `Bearer ${token}` }
+    if (!token) return;
+
+    const BACKEND_URL = process.env.REACT_APP_Backend_url;
+
+    fetch(`${BACKEND_URL}/api/profile`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setProfile(data);
       })
-        .then(res => res.json())
-        .then(data => {
-          console.log("📊 Profile data:", data);
-          console.log("⚠️ Has arrears:", data.has_arrears);
-          if (!data.error) setProfile(data);
-        })
-        .catch(err => console.error("❌ Profile fetch error:", err));
-    }
+      .catch(err => console.error("❌ Profile fetch error:", err));
   }, []);
 
   const handleLogout = () => {
@@ -63,37 +63,50 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Add spacing container */}
-      <div style={{ 
-        padding: '10px 14px 10px 14px',
-      
-      }}>
-        <nav style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: "#f9f7f7ff",
-          padding: "5px 20px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-          borderRadius: "12px",
-          minHeight: "56px"
-        }}>
-          <div style={{
-            display: "flex", alignItems: "center", gap: "0.48rem"
-          }}>
-            <span style={{ fontWeight: 750, fontSize: "1rem", color: "#174fd6", letterSpacing: "-1px" }}>
-              <span style={{
-                display:"inline-block",
-                width:"19px", height:"19px", background:"#f4f6ff",
-                borderRadius:"50%", verticalAlign:"middle", textAlign:"center", fontSize:"0.83rem", marginRight:7
-              }}>🛡️</span>
+      <div style={{ padding: "10px 14px 10px 14px" }}>
+        <nav
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "#f9f7f7ff",
+            padding: "5px 20px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+            borderRadius: "12px",
+            minHeight: "56px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.48rem" }}>
+            <span
+              style={{
+                fontWeight: 750,
+                fontSize: "1rem",
+                color: "#174fd6",
+                letterSpacing: "-1px"
+              }}
+            >
+              <span
+                style={{
+                  display: "inline-block",
+                  width: "19px",
+                  height: "19px",
+                  background: "#f4f6ff",
+                  borderRadius: "50%",
+                  verticalAlign: "middle",
+                  textAlign: "center",
+                  fontSize: "0.83rem",
+                  marginRight: 7
+                }}
+              >
+                🛡️
+              </span>
               EduConnect Hub
             </span>
           </div>
 
           {/* Center nav links */}
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            {navLinks.map(link => (
+            {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
@@ -113,33 +126,43 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Right: Download icon, profile link, and logout button */}
+          {/* Right section */}
           <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-            <span style={{
-              fontSize: "1.01rem",
-              color: "#174fd6",
-              height: "19px",
-              display: "inline-flex",
-              alignItems: "center"
-            }}>⬇️</span>
-            
-            <Link to="/student/profile" style={{
-              display: "flex",
-              alignItems: "center",
-              textDecoration: "none",
-              gap: "0.3rem"
-            }}>
-              <ContactIcon />
-           <span style={{
-  fontWeight: 600,
-  fontSize: "0.90rem",
-  color: "#75829e",
-  padding:" 0 10px"
-}}>{profile.name}</span>
+            <span
+              style={{
+                fontSize: "1.01rem",
+                color: "#174fd6",
+                height: "19px",
+                display: "inline-flex",
+                alignItems: "center"
+              }}
+            >
+              ⬇️
+            </span>
 
+            <Link
+              to="/student/profile"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                textDecoration: "none",
+                gap: "0.3rem"
+              }}
+            >
+              <ContactIcon />
+              <span
+                style={{
+                  fontWeight: 600,
+                  fontSize: "0.90rem",
+                  color: "#75829e",
+                  padding: "0 10px"
+                }}
+              >
+                {profile.name}
+              </span>
             </Link>
 
-            {/* Logout Button */}
+            {/* Logout */}
             <button
               onClick={handleLogout}
               style={{
@@ -153,8 +176,8 @@ export default function Navbar() {
                 cursor: "pointer",
                 transition: "background 0.2s"
               }}
-              onMouseEnter={(e) => e.target.style.background = "#ff7875"}
-              onMouseLeave={(e) => e.target.style.background = "#ff4d4f"}
+              onMouseEnter={(e) => (e.target.style.background = "#ff7875")}
+              onMouseLeave={(e) => (e.target.style.background = "#ff4d4f")}
             >
               Logout
             </button>
