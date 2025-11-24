@@ -34,12 +34,9 @@ export default function AdminDashboard() {
 
   return (
     <div style={{
-      minHeight: "100vh",
+    
       background: "#f5f5f5",
       fontFamily: "inherit",
-      padding: "40px", // Add padding since navbar is removed
-      maxWidth: "1400px",
-      margin: "0 auto"
     }}>
       {/* Page Header */}
       <div style={{ marginBottom: "40px" }}>

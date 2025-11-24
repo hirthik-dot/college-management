@@ -473,7 +473,14 @@ function Modal({ children, title, onClose }) {
 
 /* ---------------- Styles (central) ---------------- */
 const styles = {
-  page: { padding: 26, fontFamily: "Inter, Roboto, system-ui, sans-serif", background: "linear-gradient(180deg,#f8fafc,#f1f5f9)", minHeight: "100vh", color: "#0f172a" },
+  page: {
+    minHeight: "100vh",             // allow page to grow
+    padding: 26,
+    fontFamily: "Inter, Roboto, system-ui, sans-serif",
+    background: "linear-gradient(180deg,#f8fafc,#f1f5f9)",
+    color: "#0f172a",
+    boxSizing: "border-box"
+  },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 },
   h1: { margin: 0, fontSize: 24, color: "#0b1220" },
   subtitle: { margin: 0, color: "#475569" },
@@ -482,8 +489,19 @@ const styles = {
   ghost: { background: "transparent", border: "1px solid transparent", padding: "10px 12px", borderRadius: 10, color: "#374151", cursor: "pointer" },
   primary: { background: "linear-gradient(90deg,#4f46e5,#06b6d4)", color: "#fff", padding: "10px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 800 },
 
-  columns: { display: "grid", gridTemplateColumns: "1fr 340px", gap: 20, alignItems: "start" },
-  main: { minWidth: 0 },
+  columns: {
+    display: "grid",
+    gridTemplateColumns: "1fr 340px",
+    gap: 20,
+    alignItems: "start",
+    overflow: "visible"  // allow content to grow beyond viewport
+  },
+  main: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+    overflow: "visible"  // important to prevent scroll cutoff
+  },
 
   statsRow: { display: "flex", gap: 12, marginBottom: 12 },
 
@@ -513,29 +531,17 @@ const styles = {
   rejectBtn: { background: "linear-gradient(90deg,#ef4444,#f97316)", border: "none", color: "#fff", padding: "8px 12px", borderRadius: 10, cursor: "pointer", fontWeight: 800 },
   viewBtn: { background: "transparent", border: "1px solid #e6eefc", padding: "8px 10px", borderRadius: 10, cursor: "pointer" },
 
-  sidebar: { position: "sticky", top: 24 },
-  sidebarCard: { background: "linear-gradient(180deg,#fff,#fbfdff)", padding: 16, borderRadius: 12, boxShadow: "0 12px 30px rgba(2,6,23,0.04)" },
+  sidebarCard: { background: "linear-gradient(180deg,#fff,#fbfdff)", padding: 16, borderRadius: 12, boxShadow: "0 12px 30px rgba(163, 169, 196, 0.04)" },
   sideH: { margin: 0, marginBottom: 8 },
 
   sidePrimary: { background: "linear-gradient(90deg,#06b6d4,#4f46e5)", color: "#fff", padding: "10px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontWeight: 800 },
   sideGhost: { background: "transparent", border: "1px solid #e6eefc", padding: "10px 12px", borderRadius: 10, cursor: "pointer" },
 
-  textarea: { padding: 10, borderRadius: 8, border: "1px solid #e6eefc", minWidth: 400, outline: "none" },
+  textarea: { padding: 10, borderRadius: 8, border: "1px solid #e6eefc",  outline: "none" },
 
   copyBtn: { background: "linear-gradient(90deg,#eef2ff,#eef9ff)", border: "none", padding: "8px 10px", borderRadius: 8, cursor: "pointer" },
 
   modalBackdrop: { position: "fixed", inset: 0, background: "rgba(2,6,23,0.45)", display: "grid", placeItems: "center", zIndex: 9999 },
-  modal: { width: 720, maxWidth: "94vw", background: "linear-gradient(180deg,#fff,#fbfdff)", borderRadius: 12, padding: 18, boxShadow: "0 30px 80px rgba(2,6,23,0.45)" },
+  modal: { width: 720, background: "linear-gradient(180deg,#fff,#fbfdff)", borderRadius: 12, padding: 18, boxShadow: "0 30px 80px rgba(2,6,23,0.45)" },
   closeBtn: { border: "none", background: "transparent", fontSize: 20, cursor: "pointer" },
 };
-
-/* ----------------- small helpers used in styles ----------------- */
-function StatusPillMini({ status }) {
-  const map = {
-    Pending: { bg: "#fff7ed", color: "#b45309" },
-    Approved: { bg: "#ecfdf5", color: "#16a34a" },
-    Rejected: { bg: "#fff1f2", color: "#ef4444" },
-  };
-  const s = map[status] || map.Pending;
-  return <div style={{ padding: "6px 10px", borderRadius: 999, background: s.bg, color: s.color, fontWeight: 800 }}>{status}</div>;
-}

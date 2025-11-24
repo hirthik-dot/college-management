@@ -1,3 +1,10 @@
+html, body {
+  height: auto;       /* allow full height */
+  min-height: 100%;   /* ensure body is at least full viewport */
+  overflow-y: auto;   /* enable vertical scroll */
+  margin: 0;
+  padding: 0;
+}
 
 
 .login-container {

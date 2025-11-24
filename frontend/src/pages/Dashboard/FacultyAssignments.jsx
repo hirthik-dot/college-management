@@ -1,361 +1,315 @@
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
+import "./AssignmentsGlass.css";
 
-const assignmentsDemo = [
+// ---------- Sample Data ----------
+const SAMPLE = [
   {
     id: 1,
-    title: "OOPS Project",
-    due: "2025-11-28",
-    submissions: 29,
-    total: 40,
-    graded: 21,
-    tag: "Project",
-    status: "Open",
-    topStudent: "Ananya",
+    title: "AI Assignment 1",
+    body: "Complete the AI assignment on Neural Networks and submit by Dec 5.",
+    category: "AI",
+    pinned: true,
+    dueAt: "2025-12-05",
+    postedAt: "2025-11-10T09:20:00",
+    attachments: [{ name: "assignment1.pdf", url: "#" }],
+    status: "Active",
   },
   {
     id: 2,
-    title: "ML Quiz",
-    due: "2025-12-05",
-    submissions: 38,
-    total: 40,
-    graded: 35,
-    tag: "Quiz",
-    status: "Open",
-    topStudent: "Praveen",
+    title: "Database Assignment",
+    body: "Design ER diagram for library management system.",
+    category: "DB",
+    pinned: false,
+    dueAt: "2025-11-30",
+    postedAt: "2025-11-12T11:00:00",
+    attachments: [],
+    status: "Scheduled",
   },
   {
     id: 3,
-    title: "Database Case Study",
-    due: "2025-12-16",
-    submissions: 0,
-    total: 40,
-    graded: 0,
-    tag: "Case Study",
-    status: "Draft",
-    topStudent: "-",
+    title: "Web Dev Mini Project",
+    body: "Build a simple React project with CRUD functionality.",
+    category: "Web",
+    pinned: false,
+    dueAt: "2025-12-10",
+    postedAt: "2025-11-09T07:30:00",
+    attachments: [{ name: "project-guidelines.pdf", url: "#" }],
+    status: "Active",
   },
 ];
 
-export default function FacultyAssignmentsGlass() {
-  const [showCreateModal, setShowCreate] = useState(false);
-  const [showDetails, setShowDetails] = useState(null);
-  const [form, setForm] = useState({
-    title: "",
-    subject: "",
-    description: "",
-    due: "",
-    maxMarks: "",
-    file: null,
-    tag: "Assignment",
-  });
+// ---------- Helpers ----------
+const nowISO = () => new Date().toISOString();
+const shortDate = (iso) => (iso ? new Date(iso).toLocaleDateString() : "-");
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+// ---------- Main Component ----------
+export default function AssignmentsGlass() {
+  const [assignments, setAssignments] = useState(SAMPLE);
+  const [q, setQ] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [page, setPage] = useState(1);
+  const pageSize = 6;
 
-  const handleFile = (e) =>
-    setForm({ ...form, file: e.target.files[0] });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(null);
 
-  const submitForm = () => {
-    alert("Assignment Created\n" + JSON.stringify(form, null, 2));
-    setShowCreate(false);
+  const categories = useMemo(() => ["All", "AI", "DB", "Web", "OS", "Networking"], []);
+
+  const filtered = useMemo(() => {
+    let out = assignments.filter((a) => {
+      if (categoryFilter !== "All" && a.category !== categoryFilter) return false;
+      if (statusFilter !== "All" && a.status !== statusFilter) return false;
+      if (q && !a.title.toLowerCase().includes(q.toLowerCase()) && !a.body.toLowerCase().includes(q.toLowerCase()))
+        return false;
+      return true;
+    });
+    out.sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt));
+    return out;
+  }, [assignments, categoryFilter, statusFilter, q]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageItems = filtered.slice((page - 1) * pageSize, page * pageSize);
+
+  const addAssignment = (payload) => {
+    const newItem = {
+      id: Date.now(),
+      title: payload.title,
+      body: payload.body,
+      category: payload.category || "General",
+      pinned: !!payload.pinned,
+      dueAt: payload.dueAt || null,
+      postedAt: nowISO(),
+      attachments: payload.attachments || [],
+      status: "Active",
+    };
+    setAssignments((prev) => [newItem, ...prev]);
+    setCreateOpen(false);
+  };
+
+  const togglePin = (id) =>
+    setAssignments((prev) => prev.map((a) => (a.id === id ? { ...a, pinned: !a.pinned } : a)));
+
+  const viewAssignment = (id) => {
+    const a = assignments.find((x) => x.id === id);
+    setPreviewOpen(a);
   };
 
   return (
-    <div
-      style={{
-        padding: "40px",
-        minHeight: "100vh",
-      }}
-    >
-      <h2
-        style={{
-          color: "white",
-          fontSize: "2rem",
-          fontWeight: 800,
-          marginBottom: "25px",
-        }}
-      >
-        Assignments
-      </h2>
-
-      {/* ---------------- MODAL: CREATE ASSIGNMENT ---------------- */}
-      {showCreateModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0, 0, 0, 0.55)",
-            backdropFilter: "blur(7px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 900,
-          }}
-        >
-          <div
-            style={{
-              width: "480px",
-              background: "rgba(250, 250, 250, 0.37)",
-              borderRadius: "20px",
-              padding: "28px",
-              backdropFilter: "blur(25px)",
-              border: "1px solid rgba(61, 58, 58, 1)",
-              boxShadow: "0 0 25px rgba(174, 150, 150, 0.15)",
-              color: "#ffffffff",
-            }}
-          >
-            <h3 style={{ fontSize: "1.4rem", marginBottom: "15px" }}>
-              Create Assignment
-            </h3>
-
-            <input
-              name="title"
-              placeholder="Title"
-              onChange={handleChange}
-              style={inputStyle}
-            />
-            <input
-              name="subject"
-              placeholder="Subject"
-              onChange={handleChange}
-              style={inputStyle}
-            />
-            <textarea
-              name="description"
-              placeholder="Description"
-              onChange={handleChange}
-              rows={3}
-              style={inputStyle}
-            />
-            <input
-              type="date"
-              name="due"
-              onChange={handleChange}
-              style={inputStyle}
-            />
-            <input
-              type="number"
-              name="maxMarks"
-              placeholder="Max Marks"
-              onChange={handleChange}
-              style={inputStyle}
-            />
-
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.ppt,.txt"
-              onChange={handleFile}
-              style={{ ...inputStyle, padding: "10px" }}
-            />
-
-            <button style={btnPrimary} onClick={submitForm}>
-              Create Assignment
-            </button>
-            <button style={btnCancel} onClick={() => setShowCreate(false)}>
-              Cancel
-            </button>
-          </div>
+    <div className="assign-page-wrap">
+      {/* Header */}
+      <div className="assign-header">
+        <div>
+          <h1 className="assign-title">Assignments</h1>
+          <p className="assign-subtitle">
+            View, manage, and track assignments. Glassmorphism style for a premium look.
+          </p>
         </div>
-      )}
 
-      {/* ---------------- GLASS CARDS ---------------- */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))",
-          gap: "25px",
-        }}
-      >
-        {assignmentsDemo.map((a) => (
-          <div
-            key={a.id}
-            style={glassCard}
-            onClick={() => setShowDetails(a)}
-          >
-            <h3 style={cardTitle}>{a.title}</h3>
-            <span style={tagStyle}>{a.tag}</span>
-
-            <p style={textNormal}>
-              Due: <b style={{ color: "#ffdf76" }}>{a.due}</b>
-            </p>
-
-            <p style={textNormal}>
-              Submissions:{" "}
-              <b style={{ color: "#74ffcc" }}>
-                {a.submissions}/{a.total}
-              </b>
-            </p>
-
-            <p style={textNormal}>
-              Graded: <span style={{ color: "#76b7ff" }}>{a.graded}</span>
-            </p>
-
-            <p style={textNormal}>
-              Status:{" "}
-              <span
-                style={{
-                  color: a.status === "Draft" ? "#ff9f54" : "#7aff9c",
-                }}
-              >
-                {a.status}
-              </span>
-            </p>
-
-            <p style={textNormal}>
-              Top Student:{" "}
-              <b style={{ color: "#eac6ff" }}>{a.topStudent}</b>
-            </p>
-          </div>
-        ))}
+        <div className="assign-header-right">
+          <input
+            className="assign-search-input"
+            placeholder="Search title or body..."
+            value={q}
+            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+          />
+          <select className="assign-select" value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <select className="assign-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="All">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Scheduled">Scheduled</option>
+          </select>
+          <button className="assign-btn-primary" onClick={() => setCreateOpen(true)}>+ New Assignment</button>
+        </div>
       </div>
 
-      {/* ---------------- DETAILS SIDEBAR ---------------- */}
-      {showDetails && (
-        <div
-          style={{
-            position: "fixed",
-            right: 0,
-            top: 0,
-            height: "100vh",
-            width: "380px",
-            background: "rgba(79, 75, 75, 0.38)",
-            backdropFilter: "blur(25px)",
-            borderLeft: "1px solid rgba(241, 11, 11, 0.25)",
-            padding: "25px",
-            color: "#fff",
-            boxShadow: "-8px 0 20px rgba(0,0,0,0.4)",
-            zIndex: 999,
-          }}
-        >
-          <button
-            onClick={() => setShowDetails(null)}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#fff",
-              fontSize: "1.6rem",
-              float: "right",
-              cursor: "pointer",
-            }}
-          >
-            ×
-          </button>
+      {/* Columns */}
+      <div className="assign-columns">
+        <main className="assign-main-col">
+          <div className="assign-glass-container">
+            {pageItems.length === 0 && <div style={{ color: "#94a3b8" }}>No assignments found.</div>}
+            {pageItems.map((a) => (
+              <div key={a.id} className="assign-glass-card">
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <div className="assign-card-title">{a.title}</div>
+                      {a.pinned && <div style={{ color: "#f59e0b" }}>📌 Pinned</div>}
+                    </div>
+                    <div className="assign-card-body">{a.body}</div>
+                    <div style={{ marginTop: 8, fontSize: 13, color: "#64748b" }}>
+                      Due: {shortDate(a.dueAt)} | Category: {a.category}
+                    </div>
+                  </div>
 
-          <h2 style={{ marginTop: "30px" }}>{showDetails.title}</h2>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <button className="assign-btn-ghost" onClick={() => viewAssignment(a.id)}>View</button>
+                    <button className="assign-btn-ghost" onClick={() => togglePin(a.id)}>
+                      {a.pinned ? "Unpin" : "Pin"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
 
-          <div style={{ marginTop: "20px", fontSize: "1.1rem" }}>
-            <p>📅 Due Date: {showDetails.due}</p>
-            <p>🟢 Submissions: {showDetails.submissions}</p>
-            <p>📘 Total Students: {showDetails.total}</p>
-            <p>⭐ Graded: {showDetails.graded}</p>
-            <p>🏆 Top Student: {showDetails.topStudent}</p>
-            <p>📌 Status: {showDetails.status}</p>
+            {/* Pagination */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 12 }}>
+              <button className="assign-page-btn" onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button>
+              <div style={{ alignSelf: "center", color: "#334155" }}>{page}/{totalPages}</div>
+              <button className="assign-page-btn" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button>
+            </div>
           </div>
+        </main>
 
-          <button style={btnPrimaryFull}>View Submissions</button>
-        </div>
-      )}
+        <aside className="assign-side-col">
+          <div className="assign-sidebar-glass">
+            <h4>Pinned</h4>
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 8 }}>
+              {assignments.filter((x) => x.pinned).map((p) => (
+                <div key={p.id} className="assign-pinned-item">
+                  <div style={{ fontWeight: 800 }}>{p.title}</div>
+                  <div style={{ color: "#64748b", fontSize: 13 }}>{shortDate(p.postedAt)}</div>
+                </div>
+              ))}
+              {assignments.filter((x) => x.pinned).length === 0 && <div style={{ color: "#94a3b8" }}>No pinned assignments</div>}
+            </div>
+          </div>
+        </aside>
+      </div>
 
-      {/* ---------------- Floating Add Button ---------------- */}
-      <button
-        onClick={() => setShowCreate(true)}
-        style={floatBtn}
-      >
-        +
-      </button>
+      {/* Modals */}
+      {createOpen && <CreateModal onClose={() => setCreateOpen(false)} onCreate={addAssignment} />}
+      {previewOpen && <PreviewModal assignment={previewOpen} onClose={() => setPreviewOpen(null)} />}
     </div>
   );
 }
 
-/* ---------------- STYLES ---------------- */
-const inputStyle = {
-  width: "100%",
-  padding: "14px 14px",
-  background: "rgba(56, 54, 54, 0.14)",
-  borderRadius: "10px",
-  border: "1px solid rgba(180, 174, 174, 0.85)",
-  color: "white",
-  marginBottom: "12px",
-  fontSize: "1.05rem",
-};
+// ---------- Advanced Create Modal ----------
+function CreateModal({ onClose, onCreate }) {
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [category, setCategory] = useState("General");
+  const [dueAt, setDueAt] = useState("");
+  const [file, setFile] = useState(null);
+  const [pinned, setPinned] = useState(false);
 
-const btnPrimary = {
-  width: "100%",
-  background: "linear-gradient(90deg,#66e0ff,#2fb8ff)",
-  padding: "12px",
-  border: "none",
-  borderRadius: "12px",
-  color: "#000",
-  fontWeight: 700,
-  marginTop: "10px",
-  cursor: "pointer",
-};
+  const handleSubmit = () => {
+    if (!title.trim() || !dueAt) return alert("Title and Due Date are required!");
+    onCreate({ title, body, category, dueAt, pinned, attachments: file ? [file] : [] });
+  };
 
-const btnCancel = {
-  width: "100%",
-  background: "rgba(216, 211, 211, 0.51)",
-  padding: "12px",
-  border: "1px solid rgba(255,255,255,0.2)",
-  borderRadius: "12px",
-  color: "#fff",
-  fontWeight: 600,
-  marginTop: "10px",
-  cursor: "pointer",
-};
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(3,7,18,0.45)", display: "grid",
+      placeItems: "center", zIndex: 9999, overflowY: "auto", padding: 20
+    }}>
+      <div style={{
+        width: 500, maxWidth: "95vw", borderRadius: 16, padding: 24,
+        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+        boxShadow: "0 25px 60px rgba(0,0,0,0.15)", display: "flex",
+        flexDirection: "column", gap: 12
+      }}>
+        <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>Create Assignment</h3>
 
-const glassCard = {
-  background: "rgba(112, 109, 109, 0.46)",
-  padding: "24px",
-  borderRadius: "20px",
-  backdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.2)",
-  boxShadow: "0 0 20px rgba(255,255,255,0.15)",
-  cursor: "pointer",
-  transition: "0.3s",
-};
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          Title <span style={{ color: "#ef4444" }}>*</span>
+          <input
+            style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(2,6,23,0.06)" }}
+            value={title} onChange={e => setTitle(e.target.value)} placeholder="Assignment title"
+          />
+        </label>
 
-const cardTitle = {
-  color: "#fff",
-  fontSize: "1.3rem",
-  marginBottom: "8px",
-};
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          Description
+          <textarea
+            style={{ padding: 12, borderRadius: 10, border: "1px solid rgba(2,6,23,0.06)", minHeight: 80 }}
+            value={body} onChange={e => setBody(e.target.value)} placeholder="Assignment details"
+          />
+        </label>
 
-const tagStyle = {
-  padding: "4px 10px",
-  background: "rgba(98, 0, 209, 1)",
-  borderRadius: "8px",
-  color: "#a4a0a6bb",
-  fontSize: "0.85rem",
-  fontWeight: 700,
-};
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          Category
+          <select
+            style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(2,6,23,0.06)" }}
+            value={category} onChange={e => setCategory(e.target.value)}
+          >
+            <option>General</option>
+            <option>AI</option>
+            <option>DB</option>
+            <option>Web</option>
+            <option>OS</option>
+            <option>Networking</option>
+          </select>
+        </label>
 
-const textNormal = {
-  color: "#ffffffff",
-  marginTop: "10px",
-};
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          Due Date <span style={{ color: "#ef4444" }}>*</span>
+          <input
+            type="date"
+            style={{ padding: 10, borderRadius: 10, border: "1px solid rgba(2,6,23,0.06)" }}
+            value={dueAt} onChange={e => setDueAt(e.target.value)}
+          />
+        </label>
 
-const btnPrimaryFull = {
-  marginTop: "25px",
-  width: "100%",
-  padding: "15px",
-  border: "none",
-  borderRadius: "12px",
-  fontWeight: 700,
-  color: "#000",
-  cursor: "pointer",
-};
+        <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          Attach File
+          <input type="file" onChange={e => setFile(e.target.files[0])} />
+        </label>
 
-const floatBtn = {
-  position: "fixed",
-  bottom: "30px",
-  right: "30px",
-  width: "60px",
-  height: "60px",
-  borderRadius: "50%",
-  background: "linear-gradient(90deg,#66e0ff,#2fb8ff)",
-  border: "none",
-  fontSize: "2rem",
-  fontWeight: "bold",
-  cursor: "pointer",
-  boxShadow: "0 10px 25px rgba(146, 132, 132, 0.4)",
-};
+        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <input type="checkbox" checked={pinned} onChange={() => setPinned(!pinned)} />
+          Pin Assignment
+        </label>
+
+        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+          <button
+            style={{
+              padding: "10px 14px", borderRadius: 12, border: "none",
+              background: "linear-gradient(90deg,#7c3aed,#06b6d4)", color: "#fff", fontWeight: 800,
+              cursor: "pointer"
+            }}
+            onClick={handleSubmit}
+          >
+            Create
+          </button>
+          <button
+            style={{
+              padding: "8px 12px", borderRadius: 10, border: "1px solid rgba(2,6,23,0.06)",
+              background: "rgba(255,255,255,0.65)", cursor: "pointer"
+            }}
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Preview Modal ----------
+function PreviewModal({ assignment, onClose }) {
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(3,7,18,0.45)",
+      display: "grid", placeItems: "center", zIndex: 9999, overflowY: "auto", padding: 20
+    }}>
+      <div style={{
+        width: 500, maxWidth: "95vw", borderRadius: 16, padding: 24,
+        background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)",
+        boxShadow: "0 25px 60px rgba(0,0,0,0.15)", display: "flex",
+        flexDirection: "column", gap: 12
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h3 style={{ margin: 0, fontSize: 20, fontWeight: 900 }}>{assignment.title}</h3>
+          <button style={{ background: "transparent", border: "none", fontSize: 20, cursor: "pointer" }} onClick={onClose}>✕</button>
+        </div>
+        <p style={{ margin: 0, color: "#334155" }}>{assignment.body}</p>
+        <p style={{ margin: 0, color: "#334155" }}><strong>Category:</strong> {assignment.category}</p>
+        <p style={{ margin: 0, color: "#334155" }}><strong>Due:</strong> {shortDate(assignment.dueAt)}</p>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,181 @@
+/* ---------- Page Wrapper ---------- */
+.assign-page-wrap {
+  font-family: "Inter, Roboto, system-ui, sans-serif";
+  padding: 24px;
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f6f8fb, #eef6ff);
+  color: #0f172a;
+  overflow-y: auto; /* enables vertical scroll */
+}
+
+/* ---------- Header ---------- */
+.assign-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.assign-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.assign-subtitle {
+  margin: 0;
+  color: #475569;
+}
+
+.assign-header-right {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---------- Inputs / Selects / Buttons ---------- */
+.assign-search-input {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(6px);
+  outline: none;
+  width: 280px;
+}
+
+.assign-select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.assign-btn-primary {
+  background: linear-gradient(90deg, #7c3aed, #06b6d4);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.assign-btn-ghost {
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.assign-btn-danger {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  color: #fff;
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* ---------- Stats Row ---------- */
+.assign-stats-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.assign-stat-card {
+  padding: 12px;
+  border-radius: 12px;
+  min-width: 110px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35));
+  box-shadow: 0 8px 30px rgba(2,6,23,0.06);
+  backdrop-filter: blur(6px);
+}
+
+.assign-stat-label {
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.assign-stat-value {
+  font-size: 20px;
+  font-weight: 900;
+}
+
+/* ---------- Columns Layout ---------- */
+.assign-columns {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+  align-items: start;
+}
+
+.assign-main-col {
+  min-width: 0;
+}
+
+.assign-side-col {
+  position: sticky;
+  top: 24px;
+}
+
+/* ---------- Glass Container / Cards ---------- */
+.assign-glass-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.assign-glass-card {
+  border-radius: 14px;
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.35));
+  box-shadow: 0 20px 40px rgba(12,18,40,0.06);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.6);
+}
+
+.assign-card-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.assign-card-body {
+  margin-top: 8px;
+  color: #334155;
+}
+
+.assign-meta-text {
+  color: #64748b;
+  font-size: 13px;
+}
+
+/* ---------- Sidebar Glass ---------- */
+.assign-sidebar-glass {
+  padding: 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+  box-shadow: 0 18px 40px rgba(2,6,23,0.06);
+  border: 1px solid rgba(255,255,255,0.6);
+  backdrop-filter: blur(8px);
+}
+
+.assign-pinned-item {
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.45);
+  border: 1px solid rgba(255,255,255,0.5);
+}
+
+/* ---------- Pagination ---------- */
+.assign-page-btn {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.6);
+  cursor: pointer;
+}
+

@@ -49,8 +49,6 @@ export default function FacultyLayout() {
   return (
     <div
       style={{
-        minHeight: "100vh",
-        width: "100vw",
         position: "relative",
         overflowX: "hidden",
         margin: 0,

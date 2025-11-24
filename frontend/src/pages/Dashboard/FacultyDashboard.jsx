@@ -3,17 +3,45 @@ import FacultyAnnouncements from "./FacultyAnnouncements";
 import FacultyStudents from "./FacultyStudents";
 import FacultyReview from "./FacultyReview";
 import { useLocation } from "react-router-dom";
+import { useState } from "react";
+
+// Sample data for overview and notifications
+const OVERVIEW = [
+  { title: "Assignments", value: 2, subtitle: "Due Today" },
+  { title: "Pending Grades", value: 3, subtitle: "Awaiting Review" },
+  { title: "Students", value: 1, subtitle: "Arrears" },
+  { title: "Latest Update", value: "", subtitle: "Quiz extended" },
+];
+
+const NOTIFICATIONS = [
+  { text: "3 new submissions received in AI Lab assignment.", time: "10 mins ago" },
+  { text: "1 new leave request awaiting approval.", time: "30 mins ago" },
+  { text: "Internal marks update due tonight.", time: "1 hr ago" },
+  { text: "New announcement posted in CSE Dept.", time: "2 hrs ago" },
+];
 
 export default function FacultyDashboard() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const view = params.get("view") || "dashboard";
 
-  const card = {
-    background: "#fff",
+  const [quickActionClicked, setQuickActionClicked] = useState("");
+
+  // Common inline styles
+  const sectionStyle = {
+    borderRadius: "18px",
+    padding: "30px",
+    background: "linear-gradient(90deg,#f9f5ff 80%,#f2e8ff 100%)",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.08)",
+  };
+
+  const overviewCardStyle = {
+    background: "rgba(255, 255, 255, 0.35)",
+    backdropFilter: "blur(10px)",
     padding: "20px",
     borderRadius: "14px",
     boxShadow: "0 3px 14px rgba(0,0,0,0.08)",
+    transition: "transform 0.25s, box-shadow 0.25s",
   };
 
   const quickBtn = {
@@ -29,88 +57,82 @@ export default function FacultyDashboard() {
     transition: "0.25s",
   };
 
-  const quickBtnOutline = {
+  const quickBtnActive = {
     ...quickBtn,
-    background: "#fff",
-    color: "#7b2ff7",
-    border: "2px solid #7b2ff7",
-    boxShadow: "none",
+    background: "#5a0ecc",
+    boxShadow: "0 6px 15px rgba(90,14,204,0.35)",
+  };
+
+  const notifCard = {
+    background: "rgba(255, 255, 255, 0.35)",
+    backdropFilter: "blur(10px)",
+    padding: "20px",
+    borderRadius: "14px",
+    boxShadow: "0 3px 14px rgba(0,0,0,0.08)",
   };
 
   return (
-    <div style={{ maxWidth: 1300, margin: "36px auto", padding: "0 22px" }}>
-      
+    <div style={{ padding: 30, fontFamily: "Inter, sans-serif" }}>
       {view === "dashboard" && (
-        <section
-          style={{
-            background: "linear-gradient(90deg,#f9f5ff 80%,#f2e8ff 100%)",
-            borderRadius: "18px",
-            padding: "30px 34px",
-            boxShadow: "0 2px 16px #e2d9ff55",
-          }}
-        >
+        <section style={sectionStyle}>
           {/* Title */}
-          <h2 style={{ fontWeight: 800, fontSize: "1.6rem", marginBottom: 10 }}>
-            Faculty Dashboard
-          </h2>
+          <h2 style={{ fontWeight: 800, fontSize: "1.8rem", marginBottom: 10 }}>Faculty Dashboard</h2>
           <p style={{ marginBottom: 25, fontWeight: 600, color: "#363636" }}>
-            Manage assignments, announcements, students and reviews — all in one place.
+            Manage assignments, announcements, students, and reviews — all in one place.
           </p>
 
           {/* Overview Panel */}
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(4, 1fr)",
-              gap: "20px",
-              marginBottom: "28px",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 20,
+              marginBottom: 28,
             }}
           >
-            <div style={card}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem" }}>Assignments</h3>
-              <p style={{ marginTop: 6 }}>Due Today: <b>2</b></p>
-            </div>
-
-            <div style={card}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem" }}>Pending Grades</h3>
-              <p style={{ marginTop: 6 }}><b>3</b> awaiting review</p>
-            </div>
-
-            <div style={card}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem" }}>Students</h3>
-              <p style={{ marginTop: 6 }}>Arrears: <b>1</b></p>
-            </div>
-
-            <div style={card}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem" }}>Latest Update</h3>
-              <p style={{ marginTop: 6 }}>Quiz extended</p>
-            </div>
+            {OVERVIEW.map((item, idx) => (
+              <div
+                key={idx}
+                style={{
+                  ...overviewCardStyle,
+                  cursor: "default",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.transform = "translateY(-4px)")}
+                onMouseLeave={(e) => (e.currentTarget.style.transform = "translateY(0px)")}
+              >
+                <h3 style={{ margin: 0 }}>{item.title}</h3>
+                <p style={{ marginTop: 6 }}>
+                  {item.subtitle}: <b>{item.value}</b>
+                </p>
+              </div>
+            ))}
           </div>
 
           {/* Quick Actions */}
-          <h3 style={{ marginBottom: 14, marginTop: 25, fontWeight: 700 }}>
-            Quick Actions
-          </h3>
-
-          <div style={{ display: "flex", gap: "16px", flexWrap: "wrap" }}>
-            <button style={quickBtn}>Create Assignment</button>
-            <button style={quickBtn}>Post Announcement</button>
-            <button style={quickBtnOutline}>View Students</button>
-            <button style={quickBtnOutline}>Check Submissions</button>
-            <button style={quickBtn}>Start Review</button>
+          <h3 style={{ marginTop: 30, marginBottom: 14, fontWeight: 700 }}>Quick Actions</h3>
+          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+            {["Create Assignment", "Post Announcement", "View Students", "Check Submissions", "Start Review"].map(
+              (action) => (
+                <button
+                  key={action}
+                  style={quickActionClicked === action ? quickBtnActive : quickBtn}
+                  onClick={() => setQuickActionClicked(action)}
+                >
+                  {action}
+                </button>
+              )
+            )}
           </div>
 
-          {/* Notification Panel */}
-          <h3 style={{ marginBottom: 14, marginTop: 32, fontWeight: 700 }}>
-            Notifications
-          </h3>
-
-          <div style={{ ...card, background: "#faf7ff" }}>
-            <ul style={{ margin: 0, paddingLeft: "18px", lineHeight: "1.8rem" }}>
-              <li><b>3 new submissions</b> received in AI Lab assignment.</li>
-              <li><b>1 new leave request</b> awaiting approval.</li>
-              <li>Reminder: <b>Internal marks update due tonight.</b></li>
-              <li>New announcement posted in CSE Dept.</li>
+          {/* Notifications */}
+          <h3 style={{ marginTop: 32, marginBottom: 14, fontWeight: 700 }}>Notifications</h3>
+          <div style={notifCard}>
+            <ul style={{ margin: 0, paddingLeft: 18, lineHeight: "1.8rem" }}>
+              {NOTIFICATIONS.map((note, idx) => (
+                <li key={idx}>
+                  {note.text} <span style={{ display: "block", fontSize: "0.8rem", color: "#64748b", marginTop: 2 }}>{note.time}</span>
+                </li>
+              ))}
             </ul>
           </div>
         </section>

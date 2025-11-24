@@ -3,6 +3,18 @@ body {
     background: #93b9e0;
     margin: 0;
 }
+/* Remove global scrollbars */
+html, body {
+    height: auto;        /* avoid 100vh if content is dynamic */
+    overflow-y: auto;    /* enable scrolling */
+}
+
+/* Prevent root container from generating overflow */
+#root {
+  height: 100vh;
+  overflow: hidden;
+}
+
 .dashboard-main {
     max-width: 1200px;
     margin: auto;
