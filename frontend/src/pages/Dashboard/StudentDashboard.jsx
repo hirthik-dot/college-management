@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 // Helper to get today's string (e.g. Thursday, October 30, 2025)
 function getTodayString() {
@@ -9,17 +10,48 @@ function getTodayString() {
 export default function StudentDashboard() {
   const [profile, setProfile] = useState({ name: "" });
 
+  // 🔥 New states
+  const [assignments, setAssignments] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
+
+  const navigate = useNavigate();
+
+  const actions = [
+    { label: "Submit Assignment", sub: "Upload your work", icon: "📄", path: "/assessment" },
+    { label: "Study Materials", sub: "Access resources", icon: "📚", path: "/workspace" },
+    { label: "AI Assistant", sub: "Get help instantly", icon: "💬", path: "/student/ai" },
+    { label: "View Progress", sub: "Track performance", icon: "📈", path: "/analytics" }
+  ];
+
+  function goTo(path) {
+    navigate(path);
+  }
+
+  // Load student profile
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      fetch('http://localhost:5000/api/profile', {
-        headers: { "Authorization": `Bearer ${token}` }
+      fetch("http://localhost:5000/api/profile", {
+        headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())
         .then(data => {
           if (!data.error) setProfile(data);
         });
     }
+  }, []);
+
+  // 🔥 Fetch assignments + announcements
+  useEffect(() => {
+    fetch("http://localhost:5000/api/assignments")
+      .then(res => res.json())
+      .then(data => setAssignments(data))
+      .catch(() => setAssignments([]));
+
+    fetch("http://localhost:5000/api/announcements")
+      .then(res => res.json())
+      .then(data => setAnnouncements(data))
+      .catch(() => setAnnouncements([]));
   }, []);
 
   return (
@@ -52,41 +84,41 @@ export default function StudentDashboard() {
             <span style={{ display: "flex", alignItems: "center", fontSize: "1.1rem" }}>
               📅 {getTodayString()}
             </span>
-            <span>• <b>3 assignments due this week</b></span>
+            <span>• <b>{assignments.length} assignments posted</b></span>
           </div>
         </div>
-        {/* Circle checkmark or illustration (optional) */}
-        <svg width="80" height="80" style={{position:"absolute",top:16,right:28,opacity:0.13}}>
-          <circle cx="40" cy="40" r="38" stroke="#fff" strokeWidth="4" fill="none"/>
-          <path d="M27 43l12 12 16-20" stroke="#fff" strokeWidth="4" fill="none" strokeLinecap="round"/>
+
+        <svg width="80" height="80" style={{ position: "absolute", top: 16, right: 28, opacity: 0.13 }}>
+          <circle cx="40" cy="40" r="38" stroke="#fff" strokeWidth="4" fill="none" />
+          <path d="M27 43l12 12 16-20" stroke="#fff" strokeWidth="4" fill="none" strokeLinecap="round" />
         </svg>
       </section>
 
       {/* Quick Actions */}
       <h2 style={{ fontWeight: 700, fontSize: "1.3rem", marginBottom: 16 }}>Quick Actions</h2>
+
       <div style={{
         display: "flex",
         gap: 24,
         marginBottom: 42,
         flexWrap: "wrap"
       }}>
-        {[
-          { label: "Submit Assignment", sub: "Upload your work", icon: "📄" },
-          { label: "Study Materials", sub: "Access resources", icon: "📚" },
-          { label: "AI Assistant", sub: "Get help instantly", icon: "💬" },
-          { label: "View Progress", sub: "Track performance", icon: "📈" },
-        ].map((a, i) => (
-          <div key={i} style={{
-            background: "#f4f6ff",
-            padding: "1.15rem 1.1rem",
-            borderRadius: 16,
-            minWidth: 190,
-            flex: "1 1 200px",
-            maxWidth: 230,
-            boxShadow: "0 3px 12px rgba(70,102,246,0.04)",
-            transition: "box-shadow .13s",
-            cursor: "pointer"
-          }}>
+        {actions.map((a, i) => (
+          <div
+            key={i}
+            onClick={() => goTo(a.path)}
+            style={{
+              background: "#f4f6ff",
+              padding: "1.15rem 1.1rem",
+              borderRadius: 16,
+              minWidth: 190,
+              flex: "1 1 200px",
+              maxWidth: 230,
+              boxShadow: "0 3px 12px rgba(70,102,246,0.04)",
+              transition: "box-shadow .13s",
+              cursor: "pointer"
+            }}
+          >
             <div style={{ fontSize: "2rem", marginBottom: 10 }}>{a.icon}</div>
             <div style={{ fontWeight: 600, fontSize: "1.1rem" }}>{a.label}</div>
             <div style={{ fontSize: "0.98rem", color: "#667", marginTop: 2 }}>{a.sub}</div>
@@ -95,7 +127,8 @@ export default function StudentDashboard() {
       </div>
 
       <div style={{ display: "flex", gap: 32, flexWrap: "wrap" }}>
-        {/* Upcoming Assignments */}
+        
+        {/* 🔥 UPCOMING SECTION WITH LIVE DATA */}
         <section style={{
           flex: 2,
           background: "#fff",
@@ -104,30 +137,71 @@ export default function StudentDashboard() {
           padding: "1.2rem 1.3rem 1.7rem 1.3rem",
           minWidth: 350
         }}>
-          <h3 style={{ fontWeight: 700, fontSize: "1.13rem", marginBottom: 16 }}>Upcoming Assignments</h3>
-          {/* Example assignment card */}
-          <div style={{
-            background: "#ffeaea",
-            borderRadius: 8,
-            padding: "0.85rem",
-            marginBottom: 10,
-            borderLeft: "5px solid #f6656f"
-          }}>
-            <div style={{ fontWeight: 600 }}>Data Structures Final Project
-              <span style={{
-                background: "#ffcad1",
-                color: "#f6656f",
-                fontSize: "0.85em",
-                borderRadius: 4,
-                marginLeft: 13,
-                padding: "2px 9px",
-                verticalAlign: "middle"
-              }}>URGENT</span>
+          <h3 style={{ fontWeight: 700, fontSize: "1.13rem", marginBottom: 16 }}>Upcoming</h3>
+
+          {/* Assignments */}
+          {assignments.map((a) => (
+            <div key={a._id} style={{
+              background: "#ffeaea",
+              borderRadius: 8,
+              padding: "0.85rem",
+              marginBottom: 10,
+              borderLeft: "5px solid #f6656f"
+            }}>
+              <div style={{ fontWeight: 600 }}>
+                {a.title}
+                <span style={{
+                  background: "#ffcad1",
+                  color: "#f6656f",
+                  fontSize: "0.85em",
+                  borderRadius: 4,
+                  marginLeft: 13,
+                  padding: "2px 9px"
+                }}>Assignment</span>
+              </div>
+
+              <div style={{ color: "#656" }}>
+                {a.subject} • Due {new Date(a.due).toLocaleDateString()}
+              </div>
             </div>
-            <div style={{ color: "#656" }}>CS 301 • Due Tomorrow</div>
-          </div>
+          ))}
+
+          {/* Announcements */}
+          {announcements.map((n) => (
+            <div key={n._id} style={{
+              background: "#e8f0ff",
+              borderRadius: 8,
+              padding: "0.85rem",
+              marginBottom: 10,
+              borderLeft: "5px solid #4666f6"
+            }}>
+              <div style={{ fontWeight: 600 }}>
+                {n.title}
+                <span style={{
+                  background: "#d6e3ff",
+                  color: "#4666f6",
+                  fontSize: "0.85em",
+                  borderRadius: 4,
+                  marginLeft: 13,
+                  padding: "2px 9px"
+                }}>Announcement</span>
+              </div>
+
+              <div style={{ color: "#555" }}>
+                {n.category} • {new Date(n.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+          ))}
+
+          {/* Empty state */}
+          {assignments.length === 0 && announcements.length === 0 && (
+            <div style={{ color: "#777", textAlign: "center", padding: "20px 0" }}>
+              No upcoming items yet.
+            </div>
+          )}
         </section>
-        {/* AI Insights */}
+
+        {/* AI Insights (unchanged) */}
         <section style={{
           flex: 1.5,
           background: "#f7f9ff",
@@ -137,6 +211,7 @@ export default function StudentDashboard() {
           minWidth: 270
         }}>
           <h3 style={{ fontWeight: 700, fontSize: "1.13rem", marginBottom: 12 }}>AI Insights</h3>
+
           <div style={{
             background: "#fff",
             borderRadius: 7,
@@ -148,11 +223,13 @@ export default function StudentDashboard() {
               color: "#8259e6",
               marginBottom: 7
             }}>Study Recommendation</div>
+
             <div style={{ color: "#555", fontSize: "0.98rem" }}>
               Focus on graph algorithms for your upcoming CS 301 exam. You’ve shown strong performance in tree structures.
             </div>
           </div>
         </section>
+
       </div>
     </div>
   );

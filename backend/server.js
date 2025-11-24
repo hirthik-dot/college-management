@@ -15,6 +15,8 @@ import adminRoutes from "./routes/adminRoutes.js";
 import marksheetRoutes from "./routes/marksheetRoutes.js";
 import aiRoutes from "./routes/aiRoutes.js";
 import facultyRoutes from "./routes/facultyRoutes.js";
+import assignmentRoutes from "./routes/assignmentRoutes.js";
+import announcementRoutes from "./routes/announcementRoutes.js";
 
 const app = express();
 
@@ -41,6 +43,10 @@ const startServer = async () => {
     app.use("/api", marksheetRoutes);   // /api/upload-marksheet  /api/marksheets
     app.use("/api/ai", aiRoutes);       // /api/ai/chat
     app.use("/api", facultyRoutes);     // /api/faculty/login
+    app.use("/api/assignments", assignmentRoutes); 
+    app.use("/api/announcements", announcementRoutes);
+  
+
 
     // Start server
     const PORT = process.env.PORT || 5000;

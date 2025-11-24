@@ -24,11 +24,35 @@ function ContactIcon() {
   );
 }
 
+// Notification Bell Icon
+function BellIcon() {
+  return (
+    <svg
+      width="23"
+      height="23"
+      viewBox="0 0 24 24"
+      fill="#75829e"
+      style={{
+        cursor: "pointer",
+        padding: "4px",
+        background: "#e6e8ef",
+        borderRadius: "50%",
+      }}
+    >
+      <path d="M12 2C10.34 2 9 3.34 9 5V6.1C6.72 7.1 5 9.39 5 12V17L3 19V20H21V19L19 17V12C19 9.39 17.28 7.1 15 6.1V5C15 3.34 13.66 2 12 2ZM12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22Z" />
+    </svg>
+  );
+}
+
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState({ name: "Guest", has_arrears: false });
+
+  const [profile, setProfile] = useState({ name: "Guest" });
   const [loading, setLoading] = useState(true);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
   const navLinks = [
     { label: "Dashboard", to: "/student/dashboard" },
@@ -39,10 +63,7 @@ export default function Navbar() {
     { label: "Arrears", to: "/student/arrears" },
   ];
 
-  // Detect API URL: local vs production
-  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
-
-  // Fetch profile from backend
+  // Fetch Profile
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -53,26 +74,46 @@ export default function Navbar() {
     fetch(`${apiUrl}/api/profile`, {
       headers: { Authorization: `Bearer ${token}` },
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch profile");
-        return res.json();
-      })
-      .then((data) => {
-        if (!data.error) setProfile(data);
-      })
-      .catch((err) => {
-        console.error("❌ Profile fetch error:", err);
-        setProfile({ name: "Guest", has_arrears: false });
-      })
+      .then((res) => res.json())
+      .then((data) => setProfile(data))
       .finally(() => setLoading(false));
   }, [apiUrl]);
+
+  // Fetch unread count live
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    async function fetchUnread() {
+      try {
+        const res = await fetch(`${apiUrl}/api/announcements`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+
+        // Compare with readAnnouncements in user profile
+        const readIds = profile.readAnnouncements || [];
+        const unread = data.filter((ann) => !readIds.includes(ann._id));
+        setUnreadCount(unread.length);
+      } catch (err) {
+        console.error("Error fetching announcements:", err);
+      }
+    }
+
+    // Initial fetch
+    fetchUnread();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchUnread, 10000);
+
+    return () => clearInterval(interval);
+  }, [apiUrl, profile.readAnnouncements]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
   };
 
-  // Hide navbar on certain pages
   const HIDE_ON_PATHS = ["/", "/login/student", "/login/faculty", "/login/admin"];
   if (HIDE_ON_PATHS.includes(location.pathname)) return null;
 
@@ -97,7 +138,6 @@ export default function Navbar() {
               fontWeight: 750,
               fontSize: "1rem",
               color: "#174fd6",
-              letterSpacing: "-1px",
             }}
           >
             <span
@@ -107,9 +147,6 @@ export default function Navbar() {
                 height: "19px",
                 background: "#f4f6ff",
                 borderRadius: "50%",
-                verticalAlign: "middle",
-                textAlign: "center",
-                fontSize: "0.83rem",
                 marginRight: 7,
               }}
             >
@@ -133,7 +170,6 @@ export default function Navbar() {
                 padding: "6px 12px",
                 borderRadius: 8,
                 textDecoration: "none",
-                transition: "background .15s",
               }}
             >
               {link.label}
@@ -143,23 +179,37 @@ export default function Navbar() {
 
         {/* Right Section */}
         <div style={{ display: "flex", alignItems: "center", gap: "0.8rem" }}>
-          {/* Download Icon */}
-          <span
-            style={{
-              fontSize: "1.01rem",
-              color: "#174fd6",
-              height: "19px",
-              display: "inline-flex",
-              alignItems: "center",
-            }}
-          >
-            ⬇️
-          </span>
+          {/* Bell With Unread Badge */}
+          <Link to="/student-notifications" style={{ position: "relative" }}>
+            <BellIcon />
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  position: "absolute",
+                  top: -2,
+                  right: -2,
+                  background: "#ff4d4f",
+                  color: "white",
+                  fontSize: "10px",
+                  padding: "2px 6px",
+                  borderRadius: "10px",
+                  fontWeight: 700,
+                }}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </Link>
 
           {/* Profile */}
           <Link
             to="/student/profile"
-            style={{ display: "flex", alignItems: "center", textDecoration: "none", gap: "0.3rem" }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              textDecoration: "none",
+              gap: "0.3rem",
+            }}
           >
             <ContactIcon />
             <span
@@ -167,7 +217,6 @@ export default function Navbar() {
                 fontWeight: 600,
                 fontSize: "0.90rem",
                 color: "#75829e",
-                padding: "0 10px",
               }}
             >
               {loading ? "Loading..." : profile.name}
@@ -186,10 +235,7 @@ export default function Navbar() {
               fontSize: "0.85rem",
               fontWeight: 600,
               cursor: "pointer",
-              transition: "background 0.2s",
             }}
-            onMouseEnter={(e) => (e.target.style.background = "#ff7875")}
-            onMouseLeave={(e) => (e.target.style.background = "#ff4d4f")}
           >
             Logout
           </button>

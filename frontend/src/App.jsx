@@ -17,6 +17,7 @@ import Workspace from "./components/Workspace";
 import Assessment from "./components/Assessment";
 import Analytics from "./components/Analytics";
 import Arrears from "./components/Arrears";
+import StudentNotification from "./pages/Dashboard/StudentNotification";
 
 // Main layout for student/admin/public
 function MainLayout() {
@@ -33,33 +34,42 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+
         {/* Faculty Section */}
         <Route path="/faculty" element={<FacultyLayout />}>
           <Route path="dashboard" element={<FacultyDashboard />} />
           <Route path="login" element={<FacultyLogin />} />
-          {/* Add more faculty routes here if needed */}
         </Route>
-        
-        {/* All other routes (student, admin, etc.) */}
+
+        {/* Student + Admin Section */}
         <Route path="/" element={<MainLayout />}>
+
           <Route index element={<LandingPage />} />
+
           <Route path="student/dashboard" element={<StudentDashboard />} />
           <Route path="login/student" element={<StudentLogin />} />
           <Route path="student/profile" element={<StudentProfile />} />
           <Route path="student/ai" element={<StudentAi />} />
+
           <Route path="workspace" element={<Workspace />} />
           <Route path="student/workspace" element={<Workspace />} />
+
           <Route path="assessment" element={<Assessment />} />
           <Route path="student/assessments" element={<Assessment />} />
+
           <Route path="analytics" element={<Analytics />} />
           <Route path="student/analytics" element={<Analytics />} />
+
           <Route path="arrears" element={<Arrears />} />
           <Route path="student/arrears" element={<Arrears />} />
+
           <Route path="/login/faculty" element={<FacultyLogin />} />
 
           <Route path="admin/dashboard" element={<AdminDashboard />} />
           <Route path="login/admin" element={<AdminLogin />} />
           <Route path="admin/upload-grades" element={<AdminGradesUpload />} />
+          <Route path="/student-notifications" element={<StudentNotification />} />
+
         </Route>
       </Routes>
     </BrowserRouter>

@@ -1,64 +1,20 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
+import axios from "axios";
 
 /**
- * AnnouncementsGlass.jsx
- * Glassmorphism-style Announcements dashboard (drop-in demo).
+ * AnnouncementsGlass.jsx (connected to backend)
  *
- * - Client-side state for demo. Replace state updates with API calls as needed.
- * - Inline styles to keep it self-contained; you can extract to CSS or Tailwind later.
+ * Changes from demo:
+ * - removed SAMPLE constant
+ * - fetches announcements from backend on mount (GET /api/announcements)
+ * - posts new announcements to backend (POST /api/announcements/create)
+ * - normalizes backend _id -> id so UI code remains the same
+ *
+ * Keep the rest of the UI exactly as before.
  */
 
-/* ---------- Demo Data ---------- */
-const SAMPLE = [
-  {
-    id: 1,
-    title: "Midterm Exam Date Confirmed",
-    body:
-      "Midterm exams will be held from Dec 8 - Dec 12. Check the timetable on the portal. Students must carry college ID.",
-    category: "Exam",
-    pinned: true,
-    scheduledAt: null,
-    postedAt: "2025-11-10T09:20:00",
-    expiresAt: "2025-12-20",
-    targets: ["All Students"],
-    attachments: [{ name: "timetable.pdf", url: "#" }],
-    views: 212,
-    acks: 148,
-    status: "Active", // Active | Scheduled | Expired
-  },
-  {
-    id: 2,
-    title: "Workshop: AI in Healthcare",
-    body:
-      "A two-day workshop on AI in Healthcare (Nov 25-26). Limited seats. Register via form.",
-    category: "Events",
-    pinned: false,
-    scheduledAt: "2025-11-20T09:00:00",
-    postedAt: "2025-11-12T11:00:00",
-    expiresAt: "2025-11-30",
-    targets: ["CSE Dept", "ECE Dept"],
-    attachments: [],
-    views: 42,
-    acks: 10,
-    status: "Scheduled",
-  },
-  {
-    id: 3,
-    title: "Campus Maintenance — Power Outage",
-    body:
-      "There will be a scheduled power outage in Block A on Nov 28 from 10:00 - 14:00. Save your work.",
-    category: "General",
-    pinned: false,
-    scheduledAt: null,
-    postedAt: "2025-11-09T07:30:00",
-    expiresAt: "2025-11-29",
-    targets: ["All Students", "Faculty"],
-    attachments: [{ name: "notice.png", url: "#" }],
-    views: 89,
-    acks: 72,
-    status: "Active",
-  },
-];
+/* ---------- Configuration ---------- */
+const API = "http://localhost:5000/api/announcements";
 
 /* ---------- Helpers ---------- */
 const nowISO = () => new Date().toISOString();
@@ -75,7 +31,8 @@ const formatDateTime = (iso) => {
 
 /* ---------- Component ---------- */
 export default function AnnouncementsGlass() {
-  const [anns, setAnns] = useState(SAMPLE);
+  // now start with empty array and load from backend
+  const [anns, setAnns] = useState([]);
   const [q, setQ] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All"); // All/Active/Scheduled/Expired/Pinned
@@ -89,7 +46,11 @@ export default function AnnouncementsGlass() {
   const [attachView, setAttachView] = useState(null);
 
   /* ---------- Derived lists & stats ---------- */
-  const categories = useMemo(() => ["All", "Exam", "Events", "General", "Attendance", "Fees"], []);
+  const categories = useMemo(
+    () => ["All", "Exam", "Events", "General", "Attendance", "Fees"],
+    []
+  );
+
   const filtered = useMemo(() => {
     let out = anns.filter((a) => {
       if (categoryFilter !== "All" && a.category !== categoryFilter) return false;
@@ -99,14 +60,20 @@ export default function AnnouncementsGlass() {
       if (statusFilter === "Pinned" && !a.pinned) return false;
       if (q) {
         const s = q.toLowerCase();
-        if (!(a.title.toLowerCase().includes(s) || a.body.toLowerCase().includes(s))) return false;
+        if (!(a.title.toLowerCase().includes(s) || a.body.toLowerCase().includes(s)))
+          return false;
       }
       return true;
     });
 
-    if (sortBy === "latest") out.sort((x, y) => new Date(y.postedAt || nowISO()) - new Date(x.postedAt || nowISO()));
-    if (sortBy === "views") out.sort((x, y) => y.views - x.views);
-    if (sortBy === "acks") out.sort((x, y) => y.acks - x.acks);
+    if (sortBy === "latest")
+      out.sort(
+        (x, y) =>
+          new Date(y.postedAt || y.createdAt || nowISO()) -
+          new Date(x.postedAt || x.createdAt || nowISO())
+      );
+    if (sortBy === "views") out.sort((x, y) => (y.views || 0) - (x.views || 0));
+    if (sortBy === "acks") out.sort((x, y) => (y.acks || 0) - (x.acks || 0));
     return out;
   }, [anns, categoryFilter, statusFilter, q, sortBy]);
 
@@ -121,49 +88,122 @@ export default function AnnouncementsGlass() {
     return { total, active, scheduled, pinned };
   }, [anns]);
 
-  /* ---------- Actions (demo local updates) ---------- */
+  /* ---------- Backend integration ---------- */
 
-  // create (payload mimics fields)
-  function createAnnouncement(payload) {
-    const id = Date.now();
-    const toAdd = {
-      id,
-      title: payload.title,
-      body: payload.body,
-      category: payload.category || "General",
-      pinned: !!payload.pinned,
-      scheduledAt: payload.schedule === "later" ? payload.scheduledAt : null,
-      postedAt: payload.schedule === "now" ? nowISO() : payload.scheduledAt || nowISO(),
-      expiresAt: payload.expiresAt || null,
-      targets: payload.targets || ["All Students"],
-      attachments: payload.attachments || [],
-      views: 0,
-      acks: 0,
-      status: payload.schedule === "later" ? "Scheduled" : "Active",
-    };
-    setAnns((s) => [toAdd, ...s]);
-    setCreateOpen(false);
+  // load announcements from backend and normalize _id -> id
+  async function loadAnnouncements() {
+    try {
+      const res = await axios.get(API);
+      const data = Array.isArray(res.data) ? res.data : [];
+      const normalized = data.map((x) => ({
+        // keep original fields, but add id for compatibility with UI
+        ...x,
+        id: x._id || x.id || String(Math.random()).slice(2),
+        // normalize postedAt: many backends use postedAt or createdAt
+        postedAt: x.postedAt || x.createdAt || x.postedAt,
+        // ensure numeric fields exist
+        views: typeof x.views === "number" ? x.views : 0,
+        acks: typeof x.acks === "number" ? x.acks : 0,
+        pinned: !!x.pinned,
+      }));
+      setAnns(normalized);
+    } catch (err) {
+      console.error("Failed to load announcements:", err);
+      // keep anns as-is (empty or previously loaded)
+    }
   }
 
+  // run on mount
+  useEffect(() => {
+    loadAnnouncements();
+  }, []);
+
+  // create announcement via backend, then prepend to list (normalized)
+  async function createAnnouncement(payload) {
+    // payload should contain title and body at minimum to satisfy backend validation
+    if (!payload.title || !payload.body) {
+      alert("Title and body are required");
+      return;
+    }
+
+    try {
+      // backend route you use: POST /api/announcements/create
+      const res = await axios.post(`${API}/create`, {
+        title: payload.title,
+        body: payload.body,
+        category: payload.category || "General",
+        pinned: !!payload.pinned,
+        scheduledAt: payload.scheduledAt || null,
+        // if your backend expects postedAt or createdAt it will set it; we don't force it here
+        expiresAt: payload.expiresAt || null,
+        targets: payload.targets || ["All Students"],
+        attachments: payload.attachments || [],
+      });
+
+      const x = res.data;
+      const normalized = {
+        ...x,
+        id: x._id || x.id || String(Math.random()).slice(2),
+        postedAt: x.postedAt || x.createdAt || nowISO(),
+        views: typeof x.views === "number" ? x.views : 0,
+        acks: typeof x.acks === "number" ? x.acks : 0,
+        pinned: !!x.pinned,
+      };
+
+      setAnns((s) => [normalized, ...s]);
+      setCreateOpen(false);
+    } catch (err) {
+      console.error("Create announcement failed:", err);
+      alert(err.response?.data?.message || "Error creating announcement");
+    }
+  }
+
+  /* ---------- Local/UI actions (operate on loaded list) ---------- */
+
+  // toggle pin locally (does not call backend unless you add PATCH API)
   function togglePin(id) {
     setAnns((s) => s.map((a) => (a.id === id ? { ...a, pinned: !a.pinned } : a)));
   }
 
+  // duplicate locally
   function duplicateAnn(a) {
-    const copy = { ...a, id: Date.now(), title: a.title + " (copy)", postedAt: nowISO() };
+    const copy = {
+      ...a,
+      id: String(Date.now()) + Math.random().toString(36).slice(2),
+      title: a.title + " (copy)",
+      postedAt: nowISO(),
+      views: 0,
+      acks: 0,
+    };
     setAnns((s) => [copy, ...s]);
   }
+const API = "http://localhost:5000/api/announcements";
 
-  function expireAnn(id) {
-    setAnns((s) => s.map((a) => (a.id === id ? { ...a, status: "Expired" } : a)));
+async function expireAnn(id) {
+  try {
+    const res = await axios.patch(`${API}/${id}/expire`);
+    console.log("Expired:", res.data);
+    setAnns(prev => prev.map(a => (a.id === id ? { ...a, status: "Expired" } : a)));
+  } catch (err) {
+    console.error("Failed to expire:", err.response?.data || err.message);
+    alert("Failed to expire announcement");
   }
+}
 
+ 
+
+
+
+  // ack locally
   function ackAnn(id) {
-    setAnns((s) => s.map((a) => (a.id === id ? { ...a, acks: a.acks + 1, views: a.views + 1 } : a)));
+    setAnns((s) =>
+      s.map((a) => (a.id === id ? { ...a, acks: (a.acks || 0) + 1, views: (a.views || 0) + 1 } : a))
+    );
   }
 
+  // view -> open preview and increment views locally
   function viewAnn(id) {
-    setAnns((s) => s.map((a) => (a.id === id ? { ...a, views: a.views + 1 } : a)));
+    setAnns((s) => s.map((a) => (a.id === id ? { ...a, views: (a.views || 0) + 1 } : a)));
     const a = anns.find((x) => x.id === id);
     setPreviewOpen(a);
   }
@@ -174,18 +214,31 @@ export default function AnnouncementsGlass() {
       <div style={header}>
         <div>
           <h1 style={title}>Announcements</h1>
-          <p style={subtitle}>Create, schedule, and track announcements. Glassmorphism style for a premium look.</p>
+          <p style={subtitle}>
+            
+          </p>
         </div>
 
         <div style={headerRight}>
           <input
             placeholder="Search title or body..."
             value={q}
-            onChange={(e) => { setQ(e.target.value); setPage(1); }}
+            onChange={(e) => {
+              setQ(e.target.value);
+              setPage(1);
+            }}
             style={searchInput}
           />
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} style={select}>
-            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            style={select}
+          >
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
           </select>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} style={select}>
             <option value="All">All Status</option>
@@ -200,7 +253,9 @@ export default function AnnouncementsGlass() {
             <option value="acks">Sort: Most Acks</option>
           </select>
 
-          <button style={primaryBtn} onClick={() => setCreateOpen(true)}>+ New Announcement</button>
+          <button style={primaryBtn} onClick={() => setCreateOpen(true)}>
+            + New Announcement
+          </button>
         </div>
       </div>
 
@@ -229,17 +284,27 @@ export default function AnnouncementsGlass() {
                     </div>
 
                     <div style={cardBody}>
-                      {a.body.length > 190 ? a.body.slice(0, 190) + "…" : a.body}
+                      {a.body && a.body.length > 190 ? a.body.slice(0, 190) + "…" : a.body}
                     </div>
 
-                    <div style={{ display: "flex", gap: 10, marginTop: 12, alignItems: "center", flexWrap: "wrap" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: 10,
+                        marginTop: 12,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
                       <div style={metaText}>Posted: {formatDateTime(a.postedAt)}</div>
                       <div style={metaText}>Expires: {a.expiresAt ? shortDate(a.expiresAt) : "—"}</div>
-                      <div style={metaText}>Targets: {a.targets.join(", ")}</div>
-                      <div style={metaText}>Views: {a.views}</div>
-                      <div style={metaText}>Acks: {a.acks}</div>
+                      <div style={metaText}>Targets: {(a.targets || []).join(", ")}</div>
+                      <div style={metaText}>Views: {a.views || 0}</div>
+                      <div style={metaText}>Acks: {a.acks || 0}</div>
                       {a.attachments?.length > 0 && (
-                        <button onClick={() => setAttachView(a.attachments[0])} style={attachBtn}>📎 {a.attachments[0].name}</button>
+                        <button onClick={() => setAttachView(a.attachments[0])} style={attachBtn}>
+                          📎 {a.attachments[0].name}
+                        </button>
                       )}
                     </div>
                   </div>
@@ -247,13 +312,23 @@ export default function AnnouncementsGlass() {
                   <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
                     <div style={{ color: "#94a3b8", fontSize: 12 }}>{a.status}</div>
                     <div style={{ display: "flex", gap: 8, flexDirection: "column" }}>
-                      <button onClick={() => { viewAnn(a.id); }} style={ghostBtn}>View</button>
-                      <button onClick={() => togglePin(a.id)} style={ghostBtn}>{a.pinned ? "Unpin" : "Pin"}</button>
-                      <button onClick={() => duplicateAnn(a)} style={ghostBtn}>Duplicate</button>
-                      <button onClick={() => expireAnn(a.id)} style={dangerBtn}>Expire</button>
+                      <button onClick={() => { viewAnn(a.id); }} style={ghostBtn}>
+                        View
+                      </button>
+                      <button onClick={() => togglePin(a.id)} style={ghostBtn}>
+                        {a.pinned ? "Unpin" : "Pin"}
+                      </button>
+                      <button onClick={() => duplicateAnn(a)} style={ghostBtn}>
+                        Duplicate
+                      </button>
+                      <button onClick={() => expireAnn(a.id)} style={dangerBtn}>
+                        Expire
+                      </button>
                     </div>
                     <div style={{ marginTop: 8 }}>
-                      <button onClick={() => ackAnn(a.id)} style={ackBtn}>Mark as read</button>
+                      <button onClick={() => ackAnn(a.id)} style={ackBtn}>
+                        Mark as read
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -262,9 +337,15 @@ export default function AnnouncementsGlass() {
 
             {/* pagination */}
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setPage((p) => Math.max(1, p - 1))} style={pageBtn}>Prev</button>
-              <div style={{ alignSelf: "center", color: "#334155" }}>{page}/{totalPages}</div>
-              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} style={pageBtn}>Next</button>
+              <button onClick={() => setPage((p) => Math.max(1, p - 1))} style={pageBtn}>
+                Prev
+              </button>
+              <div style={{ alignSelf: "center", color: "#334155" }}>
+                {page}/{totalPages}
+              </div>
+              <button onClick={() => setPage((p) => Math.min(totalPages, p + 1))} style={pageBtn}>
+                Next
+              </button>
             </div>
           </div>
         </main>
@@ -288,9 +369,15 @@ export default function AnnouncementsGlass() {
           <div style={sidebarGlass}>
             <h4 style={{ margin: 0 }}>Quick Actions</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-              <button style={primaryBtn} onClick={() => setCreateOpen(true)}>+ New Announcement</button>
-              <button style={ghostBtn} onClick={() => alert("Export demo")}>Export CSV</button>
-              <button style={ghostBtn} onClick={() => alert("Bulk pin demo")}>Bulk Pin (demo)</button>
+              <button style={primaryBtn} onClick={() => setCreateOpen(true)}>
+                + New Announcement
+              </button>
+              <button style={ghostBtn} onClick={() => alert("Export demo")}>
+                Export CSV
+              </button>
+              <button style={ghostBtn} onClick={() => alert("Bulk pin demo")}>
+                Bulk Pin (demo)
+              </button>
             </div>
           </div>
         </aside>
@@ -304,19 +391,25 @@ export default function AnnouncementsGlass() {
         <Modal onClose={() => setPreviewOpen(null)} title={previewOpen.title}>
           <div style={{ marginBottom: 10 }}>{previewOpen.body}</div>
           <div style={{ color: "#64748b", fontSize: 13, marginBottom: 8 }}>
-            Category: {previewOpen.category} • Targets: {previewOpen.targets.join(", ")}
+            Category: {previewOpen.category} • Targets: {(previewOpen.targets || []).join(", ")}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
             {previewOpen.attachments?.map((f, i) => (
-              <button key={i} style={attachBtn} onClick={() => setAttachView(f)}>📎 {f.name}</button>
+              <button key={i} style={attachBtn} onClick={() => setAttachView(f)}>
+                📎 {f.name}
+              </button>
             ))}
           </div>
 
           <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ color: "#64748b" }}>Views: {previewOpen.views} • Acks: {previewOpen.acks}</div>
             <div>
-              <button style={ghostBtn} onClick={() => duplicateAnn(previewOpen)}>Duplicate</button>
-              <button style={dangerBtn} onClick={() => expireAnn(previewOpen.id)}>Expire</button>
+              <button style={ghostBtn} onClick={() => duplicateAnn(previewOpen)}>
+                Duplicate
+              </button>
+              <button style={dangerBtn} onClick={() => expireAnn(previewOpen.id)}>
+                Expire
+              </button>
             </div>
           </div>
         </Modal>
@@ -327,7 +420,9 @@ export default function AnnouncementsGlass() {
         <Modal onClose={() => setAttachView(null)} title={`Attachment: ${attachView.name}`}>
           <div style={{ color: "#334155" }}>Preview not available in demo. File: {attachView.name}</div>
           <div style={{ marginTop: 12 }}>
-            <button style={primaryBtn} onClick={() => alert("Download demo")}>Download</button>
+            <button style={primaryBtn} onClick={() => alert("Download demo")}>
+              Download
+            </button>
           </div>
         </Modal>
       )}
@@ -377,7 +472,7 @@ function CreateModal({ onClose, onCreate }) {
             <option>Fees</option>
           </select>
 
-          <input placeholder="Targets (comma separated)" value={targets.join(", ")} onChange={(e) => setTargets(e.target.value.split(",").map(s=>s.trim()))} style={formInput} />
+          <input placeholder="Targets (comma separated)" value={targets.join(", ")} onChange={(e) => setTargets(e.target.value.split(",").map(s => s.trim()))} style={formInput} />
 
           <label style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="checkbox" checked={pinned} onChange={(e) => setPinned(e.target.checked)} /> Pin
@@ -391,12 +486,12 @@ function CreateModal({ onClose, onCreate }) {
           <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
             <input type="radio" name="sch" value="later" checked={schedule === "later"} onChange={() => setSchedule("later")} /> Schedule later
           </label>
-          {schedule === "later" && <input type="datetime-local" value={scheduledAt} onChange={(e)=>setScheduledAt(e.target.value)} style={formInput} />}
-          <input type="date" value={expiresAt} onChange={(e)=>setExpiresAt(e.target.value)} style={formInput} />
+          {schedule === "later" && <input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} style={formInput} />}
+          <input type="date" value={expiresAt} onChange={(e) => setExpiresAt(e.target.value)} style={formInput} />
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input placeholder="Attachment name (mock)" value={attachmentName} onChange={(e)=>setAttachmentName(e.target.value)} style={formInput} />
+          <input placeholder="Attachment name (mock)" value={attachmentName} onChange={(e) => setAttachmentName(e.target.value)} style={formInput} />
           <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
             <button style={ghostBtn} onClick={onClose}>Cancel</button>
             <button style={primaryBtn} onClick={submit}>Create</button>
@@ -509,4 +604,3 @@ const formText = { padding: 12, borderRadius: 10, border: "1px solid rgba(2,6,23
 const formSelect = { padding: "10px 12px", borderRadius: 10, border: "1px solid rgba(2,6,23,0.06)" };
 
 /* ---------------- END ---------------- */
-
