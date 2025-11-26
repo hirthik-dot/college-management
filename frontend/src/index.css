@@ -11,9 +11,12 @@ html, body {
 
 /* Prevent root container from generating overflow */
 #root {
-  height: 100vh;
-  overflow: hidden;
+  min-height: 100vh;
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
+
 
 .dashboard-main {
     max-width: 1200px;

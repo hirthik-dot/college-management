@@ -1,7 +1,7 @@
 // backend/controllers/authController.js
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import Announcement from "../models/Announcement.js";
+import Announcement from "../models/announcementModel.js";
 
 // Clean input strings
 const cleanString = (str) => {

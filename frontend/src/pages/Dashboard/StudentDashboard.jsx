@@ -41,19 +41,8 @@ export default function StudentDashboard() {
     }
   }, []);
 
-  // 🔥 Fetch assignments + announcements
-  useEffect(() => {
-    fetch("http://localhost:5000/api/assignments")
-      .then(res => res.json())
-      .then(data => setAssignments(data))
-      .catch(() => setAssignments([]));
-
-    fetch("http://localhost:5000/api/announcements")
-      .then(res => res.json())
-      .then(data => setAnnouncements(data))
-      .catch(() => setAnnouncements([]));
-  }, []);
-
+ 
+ 
   return (
     <div style={{
       maxWidth: 1200,
